@@ -23,15 +23,25 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.auth.uid == userId;
       // ⚠️ 보안 주의: 클라이언트에서 포인트 수정 허용 (Security Rules로 검증)
-      allow update: if isOwner(userId) && (
-        // 포인트가 증가하는 경우 (충전) - 양수만 허용
-        (request.resource.data.point > resource.data.point && 
-         request.resource.data.point - resource.data.point <= 1000000) ||
-        // 포인트가 감소하는 경우 (거래) - 거래 금액만큼만 감소 허용
-        (request.resource.data.point < resource.data.point &&
-         resource.data.point - request.resource.data.point <= 10000000) ||
-        // 포인트가 변경되지 않는 경우 (다른 필드만 수정)
-        request.resource.data.point == resource.data.point
+      allow update: if isAuthenticated() && (
+        // 본인이 포인트를 수정하는 경우 (충전/거래)
+        (isOwner(userId) && (
+          // 포인트가 증가하는 경우 (충전) - 양수만 허용
+          (request.resource.data.point > resource.data.point && 
+           request.resource.data.point - resource.data.point <= 1000000) ||
+          // 포인트가 감소하는 경우 (거래) - 거래 금액만큼만 감소 허용
+          (request.resource.data.point < resource.data.point &&
+           resource.data.point - request.resource.data.point <= 10000000) ||
+          // 포인트가 변경되지 않는 경우 (다른 필드만 수정)
+          request.resource.data.point == resource.data.point
+        )) ||
+        // 다른 사용자가 포인트를 증가시키는 경우 (거래로 인한 수입) - 제한적 허용
+        (!isOwner(userId) && 
+         request.resource.data.point > resource.data.point &&
+         request.resource.data.point - resource.data.point <= 10000000 &&
+         // 다른 필드는 변경 불가 (포인트만 변경 가능) - 주요 필드 확인
+         (!('email' in request.resource.data) || request.resource.data.email == resource.data.email) &&
+         (!('displayName' in request.resource.data) || request.resource.data.displayName == resource.data.displayName))
       );
       allow delete: if false; // 사용자 삭제는 관리자만 가능
     }
@@ -40,8 +50,15 @@ service cloud.firestore {
     match /products/{productId} {
       allow read: if true; // 누구나 읽기 가능
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() &&
-                       resource.data.sellerId == request.auth.uid;
+      // 판매자만 수정 가능하지만, 구매자가 상태를 SOLD_OUT으로 변경하는 것은 허용
+      allow update: if isAuthenticated() && (
+        // 판매자가 수정하는 경우
+        resource.data.sellerId == request.auth.uid ||
+        // 구매자가 상태를 SOLD_OUT으로 변경하는 경우 (거래 완료)
+        (request.resource.data.status == 'SOLD_OUT' && 
+         resource.data.status == 'ON_SALE' &&
+         resource.data.sellerId != request.auth.uid)
+      );
       allow delete: if isAuthenticated() &&
                        resource.data.sellerId == request.auth.uid;
     }
@@ -50,20 +67,42 @@ service cloud.firestore {
     match /point_logs/{logId} {
       allow read: if isAuthenticated() &&
                      resource.data.userId == request.auth.uid;
-      // ⚠️ 보안 주의: 클라이언트에서 point_logs 작성 허용 (본인만)
+      // ⚠️ 보안 주의: 클라이언트에서 point_logs 작성 허용
+      // 본인의 로그 생성 또는 거래 상대방의 로그 생성 허용 (거래 완료 기록용)
       allow create: if isAuthenticated() &&
-                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.userId != null &&
                        request.resource.data.amount > 0 &&
-                       request.resource.data.amount <= 10000000;
+                       request.resource.data.amount <= 10000000 &&
+                       (
+                         // 본인의 로그 생성
+                         request.resource.data.userId == request.auth.uid ||
+                         // 거래 상대방의 로그 생성 (TRANSFER 타입만, relatedUserId가 현재 사용자인 경우)
+                         (request.resource.data.type == 'TRANSFER' &&
+                          request.resource.data.relatedUserId == request.auth.uid)
+                       );
       allow update: if false; // 로그는 수정 불가
       allow delete: if false; // 로그는 삭제 불가
     }
 
     // Collection: chat_rooms
     match /chat_rooms/{roomId} {
-      allow read: if isParticipant(roomId);
-      allow create: if isAuthenticated();
-      allow update: if isParticipant(roomId);
+      // 채팅방 읽기: 참여자(buyerId 또는 sellerId)만 가능
+      // 단, 채팅방이 생성되기 전에는 isParticipant를 체크할 수 없으므로
+      // buyerId 또는 sellerId가 현재 사용자인 경우 허용
+      allow read: if isAuthenticated() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid
+      );
+      // 채팅방 생성: 인증된 사용자만 가능
+      allow create: if isAuthenticated() &&
+                       // 생성 시 buyerId 또는 sellerId 중 하나는 현재 사용자여야 함
+                       (request.resource.data.buyerId == request.auth.uid ||
+                        request.resource.data.sellerId == request.auth.uid);
+      // 채팅방 업데이트: 참여자만 가능
+      allow update: if isAuthenticated() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid
+      );
       allow delete: if false;
 
       // Sub-collection: messages

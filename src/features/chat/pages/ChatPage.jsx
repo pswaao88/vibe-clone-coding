@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../shared/utils/firebase';
 import { useAuth } from '../../auth/hooks/useAuth';
@@ -6,6 +7,8 @@ import { Loading } from '../../../shared/components/Loading';
 
 export function ChatPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const roomIdFromUrl = searchParams.get('roomId');
   const [chatRooms, setChatRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -57,6 +60,16 @@ export function ChatPage() {
       unsubscribe2();
     };
   }, [user]);
+
+  // URL에서 roomId가 있으면 해당 채팅방 선택
+  useEffect(() => {
+    if (roomIdFromUrl && chatRooms.length > 0) {
+      const room = chatRooms.find(r => r.id === roomIdFromUrl);
+      if (room) {
+        setSelectedRoom(room);
+      }
+    }
+  }, [roomIdFromUrl, chatRooms]);
 
   useEffect(() => {
     if (!selectedRoom) return;
