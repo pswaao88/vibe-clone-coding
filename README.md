@@ -24,9 +24,8 @@ Firebase와 React를 사용한 중고거래 플랫폼 프로젝트입니다.
 - Firebase Client SDK (Authentication, Firestore)
 
 ### Backend
-- Firebase Cloud Functions
-- Firebase Admin SDK
-- Firestore Database
+- Firestore Database (클라이언트 사이드)
+- Firebase Authentication
 
 ### Deployment
 - Frontend: Netlify
@@ -49,13 +48,8 @@ clone-coding-ver1/
 │   ├── App.jsx
 │   ├── index.js
 │   └── index.css
-├── functions/                 # Firebase Cloud Functions
-│   └── src/
-│       ├── utils/
-│       ├── transaction.js
-│       └── index.js
 ├── scripts/                   # Utility scripts
-│   └── seedData.js           # Dummy data seeding
+│   └── seedEmulator.js      # 에뮬레이터용 더미 데이터
 ├── firestore.rules           # Firestore security rules
 ├── firestore.indexes.json    # Firestore indexes
 ├── firebase.json
@@ -73,16 +67,8 @@ cd clone-coding-ver1
 
 ### 2. 의존성 설치
 
-#### Frontend 의존성
 ```bash
 npm install
-```
-
-#### Functions 의존성
-```bash
-cd functions
-npm install
-cd ..
 ```
 
 ### 3. Firebase 프로젝트 설정
@@ -116,7 +102,6 @@ REACT_APP_FIREBASE_PROJECT_ID=your-project-id
 REACT_APP_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 REACT_APP_FIREBASE_APP_ID=your-app-id
-REACT_APP_FUNCTIONS_URL=https://us-central1-your-project-id.cloudfunctions.net
 ```
 
 ### 5. Firestore Rules & Indexes 배포
@@ -126,20 +111,7 @@ firebase deploy --only firestore:rules
 firebase deploy --only firestore:indexes
 ```
 
-### 6. Cloud Functions 배포
-
-```bash
-firebase deploy --only functions
-```
-
-### 7. 더미 데이터 추가 (선택사항)
-
-```bash
-# scripts/seedData.js에서 프로젝트 ID를 수정한 후:
-node scripts/seedData.js
-```
-
-### 8. 로컬 개발 환경 설정 (에뮬레이터 사용 - 무료)
+### 6. 로컬 개발 환경 설정 (에뮬레이터 사용 - 무료)
 
 Blaze 플랜 없이 로컬에서 테스트하려면:
 
@@ -154,9 +126,7 @@ npm run seed:emulator
 npm start
 ```
 
-자세한 내용은 `LOCAL_SETUP.md` 파일을 참고하세요.
-
-### 9. 개발 서버 실행 (일반)
+### 7. 개발 서버 실행 (일반)
 
 ```bash
 npm start
@@ -179,11 +149,7 @@ npm start
 
 ### Backend (Firebase)
 
-#### 옵션 1: Firestore + Auth만 사용 (Spark 플랜 - 무료)
-
-Cloud Functions 없이 배포:
-- Firestore와 Authentication만 사용
-- 포인트 거래 기능은 제외
+**Spark 플랜으로 무료 배포 가능!**
 
 ```bash
 # Firestore Rules 배포
@@ -191,22 +157,7 @@ firebase deploy --only firestore:rules
 firebase deploy --only firestore:indexes
 ```
 
-#### 옵션 2: Cloud Functions 포함 (Blaze 플랜 필요)
-
-**참고:** Blaze 플랜이 필요하지만 무료 할당량이 충분합니다.
-- 월 200만 함수 호출 무료
-- 소규모 프로젝트는 거의 비용 없음
-
-```bash
-# Functions 배포 (Blaze 플랜 필요)
-firebase deploy --only functions
-
-# Firestore Rules 배포
-firebase deploy --only firestore:rules
-firebase deploy --only firestore:indexes
-```
-
-자세한 내용은 `FIREBASE_PRICING_GUIDE.md` 참고
+**참고:** Cloud Functions를 사용하지 않으므로 Blaze 플랜이 필요하지 않습니다. 모든 로직은 클라이언트 사이드에서 실행됩니다.
 
 ## 데이터베이스 스키마
 
@@ -233,49 +184,17 @@ firebase deploy --only firestore:indexes
 - balance: 거래 후 잔액
 - description: 거래 설명
 
-## API 엔드포인트
+## 주요 기능 설명
 
-### POST /transaction
-포인트 거래 처리
+### 포인트 거래
+- 클라이언트 사이드에서 Firestore Transaction 사용
+- 원자성 보장으로 안전한 거래 처리
+- `src/features/wallet/api/transactionApi.js`에서 구현
 
-**Request:**
-```json
-{
-  "senderId": "user-id",
-  "receiverId": "seller-id",
-  "amount": 50000,
-  "productId": "product-id"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "txId": "transaction-id",
-  "message": "거래가 완료되었습니다."
-}
-```
-
-### POST /charge
-포인트 충전
-
-**Request:**
-```json
-{
-  "userId": "user-id",
-  "amount": 50000
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "txId": "transaction-id",
-  "message": "포인트가 충전되었습니다."
-}
-```
+### 포인트 충전
+- 클라이언트 사이드에서 직접 처리
+- Security Rules로 보안 관리
+- `src/features/wallet/components/ChargeForm.jsx`에서 구현
 
 ## 보안 규칙
 
@@ -283,18 +202,15 @@ Firestore Security Rules는 다음과 같이 설정됩니다:
 
 - 인증된 사용자만 데이터 읽기/쓰기 가능
 - 사용자는 자신의 데이터만 수정 가능
-- 포인트 필드는 클라이언트에서 수정 불가 (Cloud Functions에서만 수정 가능)
+- 포인트 수정은 제한적으로 허용 (충전/거래 한도 설정)
 - 거래 내역은 본인만 조회 가능
+- 채팅방은 참여자만 접근 가능
 
 ## 문제 해결
 
 ### Firebase 연결 오류
 - `.env` 파일의 Firebase 설정 확인
 - Firebase 프로젝트 콘솔에서 Authentication, Firestore 활성화 확인
-
-### Functions 배포 오류
-- `functions/package.json`의 Node.js 버전 확인 (Node 18 권장)
-- Firebase CLI 최신 버전 사용: `npm install -g firebase-tools@latest`
 
 ### 빌드 오류
 - 의존성 재설치: `rm -rf node_modules package-lock.json && npm install`
@@ -306,3 +222,4 @@ ISC
 ## 작성자
 
 clone-coding-ver1
+
