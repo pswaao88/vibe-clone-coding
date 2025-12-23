@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isParticipant(roomId) {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/chat_rooms/$(roomId)).data.buyerId == request.auth.uid ||
+        get(/databases/$(database)/documents/chat_rooms/$(roomId)).data.sellerId == request.auth.uid
+      );
+    }
+
+    // Collection: users
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // ⚠️ 보안 주의: 클라이언트에서 포인트 수정 허용 (Security Rules로 검증)
+      allow update: if isOwner(userId) && (
+        // 포인트가 증가하는 경우 (충전) - 양수만 허용
+        (request.resource.data.point > resource.data.point && 
+         request.resource.data.point - resource.data.point <= 1000000) ||
+        // 포인트가 감소하는 경우 (거래) - 거래 금액만큼만 감소 허용
+        (request.resource.data.point < resource.data.point &&
+         resource.data.point - request.resource.data.point <= 10000000) ||
+        // 포인트가 변경되지 않는 경우 (다른 필드만 수정)
+        request.resource.data.point == resource.data.point
+      );
+      allow delete: if false; // 사용자 삭제는 관리자만 가능
+    }
+
+    // Collection: products
+    match /products/{productId} {
+      allow read: if true; // 누구나 읽기 가능
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+                       resource.data.sellerId == request.auth.uid;
+      allow delete: if isAuthenticated() &&
+                       resource.data.sellerId == request.auth.uid;
+    }
+
+    // Collection: point_logs
+    match /point_logs/{logId} {
+      allow read: if isAuthenticated() &&
+                     resource.data.userId == request.auth.uid;
+      // ⚠️ 보안 주의: 클라이언트에서 point_logs 작성 허용 (본인만)
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.amount > 0 &&
+                       request.resource.data.amount <= 10000000;
+      allow update: if false; // 로그는 수정 불가
+      allow delete: if false; // 로그는 삭제 불가
+    }
+
+    // Collection: chat_rooms
+    match /chat_rooms/{roomId} {
+      allow read: if isParticipant(roomId);
+      allow create: if isAuthenticated();
+      allow update: if isParticipant(roomId);
+      allow delete: if false;
+
+      // Sub-collection: messages
+      match /messages/{messageId} {
+        allow read: if isParticipant(roomId);
+        allow create: if isParticipant(roomId);
+        allow update: if isParticipant(roomId) &&
+                         resource.data.senderId == request.auth.uid;
+        allow delete: if false;
+      }
+    }
+  }
+}
