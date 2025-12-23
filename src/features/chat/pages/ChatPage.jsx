@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../shared/utils/firebase';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { Loading } from '../../../shared/components/Loading';
@@ -105,13 +105,10 @@ export function ChatPage() {
 
       // 채팅방의 lastMessage 업데이트
       const roomRef = doc(db, 'chat_rooms', selectedRoom.id);
-      const roomDoc = await getDoc(roomRef);
-      if (roomDoc.exists()) {
-        await roomRef.update({
-          lastMessage: messageText,
-          lastMessageAt: serverTimestamp()
-        });
-      }
+      await updateDoc(roomRef, {
+        lastMessage: messageText,
+        lastMessageAt: serverTimestamp()
+      });
 
       setMessageText('');
     } catch (error) {
@@ -166,6 +163,11 @@ export function ChatPage() {
             <>
               <div className="messages-header">
                 <h3>{getOtherUser(selectedRoom).name}와의 대화</h3>
+                {selectedRoom.productId && (
+                  <p className="product-link" onClick={() => window.location.href = `/products/${selectedRoom.productId}`}>
+                    상품 보기
+                  </p>
+                )}
               </div>
               <div className="messages-list">
                 {roomLoading ? (

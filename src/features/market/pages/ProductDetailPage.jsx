@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../shared/utils/firebase';
@@ -14,7 +14,7 @@ export function ProductDetailPage() {
   const { product, loading } = useProductDetail(id);
   const { executeTransaction, loading: txLoading } = useTransaction();
   const { user } = useAuth();
-  const [chatLoading, setChatLoading] = React.useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
 
   const handleChat = async () => {
     if (!user) {
