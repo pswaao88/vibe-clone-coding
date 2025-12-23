@@ -33,16 +33,16 @@ firebase emulators:start
 
 ```bash
 # .env 파일
-REACT_APP_FUNCTIONS_URL=http://localhost:5001/vibecoding-b8688/us-central1
+REACT_APP_FUNCTIONS_URL=http://localhost:5001/your-project-id/us-central1
 ```
 
 또는 `src/shared/utils/constants.js`에서 자동으로 감지:
 
 ```javascript
 export const FUNCTIONS_URL = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:5001/vibecoding-b8688/us-central1'  // 로컬 에뮬레이터
+  ? `http://localhost:5001/${process.env.REACT_APP_FIREBASE_PROJECT_ID || 'your-project-id'}/us-central1`  // 로컬 에뮬레이터
   : process.env.REACT_APP_FUNCTIONS_URL || 
-    'https://us-central1-vibecoding-b8688.cloudfunctions.net';  // 프로덕션
+    `https://us-central1-${process.env.REACT_APP_FIREBASE_PROJECT_ID || 'your-project-id'}.cloudfunctions.net`;  // 프로덕션
 ```
 
 #### 4. React 앱과 함께 실행
@@ -62,7 +62,7 @@ npm start
 실제 프로덕션 환경에 배포하려면:
 
 1. **Firebase Console에서 업그레이드**
-   - https://console.firebase.google.com/project/vibecoding-b8688/usage/details
+   - Firebase Console → 프로젝트 설정 → 사용량 및 결제
    - Blaze 플랜으로 업그레이드
    - 신용카드 등록 필요 (무료 할당량 제공)
 
@@ -84,7 +84,9 @@ cd functions && npm install && cd ..
 firebase login
 
 # 3. 프로젝트 선택
-firebase use vibecoding-b8688
+firebase use --add
+# 또는
+firebase use your-project-id
 ```
 
 ### 2. 에뮬레이터 시작
@@ -114,7 +116,7 @@ React 앱이 http://localhost:3000 에서 실행됩니다.
 
 ```bash
 # 예: transaction 함수 테스트
-curl -X POST http://localhost:5001/vibecoding-b8688/us-central1/transaction \
+curl -X POST http://localhost:5001/your-project-id/us-central1/transaction \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{

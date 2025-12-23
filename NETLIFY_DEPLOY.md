@@ -33,9 +33,9 @@ Netlify가 자동으로 `netlify.toml` 파일을 읽어옵니다:
 
 ```
 REACT_APP_FIREBASE_API_KEY=실제_API_키
-REACT_APP_FIREBASE_AUTH_DOMAIN=vibecoding-b8688.firebaseapp.com
-REACT_APP_FIREBASE_PROJECT_ID=vibecoding-b8688
-REACT_APP_FIREBASE_STORAGE_BUCKET=vibecoding-b8688.appspot.com
+REACT_APP_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your-project-id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=실제_Sender_ID
 REACT_APP_FIREBASE_APP_ID=실제_App_ID
 ```
@@ -46,7 +46,7 @@ REACT_APP_FIREBASE_APP_ID=실제_App_ID
 
 Firebase Console에서 설정 정보 가져오기:
 
-1. https://console.firebase.google.com/project/vibecoding-b8688/settings/general 접속
+1. Firebase Console → 프로젝트 설정 → 일반 접속
 2. "Your apps" 섹션에서 웹 앱 선택 (없으면 생성)
 3. 설정 정보 복사
 

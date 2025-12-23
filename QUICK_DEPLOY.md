@@ -31,9 +31,9 @@ git push origin main
 
 ```
 REACT_APP_FIREBASE_API_KEY=실제_API_키
-REACT_APP_FIREBASE_AUTH_DOMAIN=vibecoding-b8688.firebaseapp.com
-REACT_APP_FIREBASE_PROJECT_ID=vibecoding-b8688
-REACT_APP_FIREBASE_STORAGE_BUCKET=vibecoding-b8688.appspot.com
+REACT_APP_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your-project-id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=실제_Sender_ID
 REACT_APP_FIREBASE_APP_ID=실제_App_ID
 ```
@@ -56,7 +56,7 @@ netlify deploy --prod
 
 ## 🔑 Firebase 설정 정보 가져오기
 
-1. https://console.firebase.google.com/project/vibecoding-b8688/settings/general 접속
+1. Firebase Console → 프로젝트 설정 → 일반 접속
 2. "Your apps" 섹션에서 웹 앱 선택 (없으면 "+" 버튼으로 생성)
 3. 설정 정보 복사:
 
@@ -64,7 +64,7 @@ netlify deploy --prod
 const firebaseConfig = {
   apiKey: "AIza...",           // ← REACT_APP_FIREBASE_API_KEY
   authDomain: "...",            // ← REACT_APP_FIREBASE_AUTH_DOMAIN
-  projectId: "vibecoding-b8688", // ← REACT_APP_FIREBASE_PROJECT_ID
+  projectId: "your-project-id", // ← REACT_APP_FIREBASE_PROJECT_ID
   storageBucket: "...",         // ← REACT_APP_FIREBASE_STORAGE_BUCKET
   messagingSenderId: "...",     // ← REACT_APP_FIREBASE_MESSAGING_SENDER_ID
   appId: "1:..."                // ← REACT_APP_FIREBASE_APP_ID
