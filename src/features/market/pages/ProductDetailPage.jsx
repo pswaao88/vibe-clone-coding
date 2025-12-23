@@ -52,11 +52,9 @@ export function ProductDetailPage() {
         
         const existingRooms = await getDocs(q);
         
-        let roomId;
-        if (!existingRooms.empty) {
-          roomId = existingRooms.docs[0].id;
-        } else {
-          const newRoom = await addDoc(chatRoomsRef, {
+        if (existingRooms.empty) {
+          // 새 채팅방 생성
+          await addDoc(chatRoomsRef, {
             productId: product.id,
             buyerId: user.uid,
             sellerId: product.sellerId,
@@ -65,7 +63,6 @@ export function ProductDetailPage() {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
-          roomId = newRoom.id;
         }
         
         alert('구매가 완료되었습니다!');

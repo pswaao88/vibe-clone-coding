@@ -1,6 +1,6 @@
 // 클라이언트 사이드 거래 API (Cloud Functions 없이)
 // ⚠️ 보안 주의: 클라이언트에서 실행되므로 보안 규칙으로 보호해야 합니다.
-import { runTransaction, doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { runTransaction, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../shared/utils/firebase';
 
 export const transactionApi = async (data) => {

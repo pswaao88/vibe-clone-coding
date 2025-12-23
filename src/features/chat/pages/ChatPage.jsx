@@ -92,15 +92,13 @@ export function ChatPage() {
 
       // 채팅방의 lastMessage 업데이트
       const roomRef = doc(db, 'chat_rooms', selectedRoom.id);
-      await getDoc(roomRef).then(async (roomDoc) => {
-        if (roomDoc.exists()) {
-          const roomData = roomDoc.data();
-          await roomRef.update({
-            lastMessage: messageText,
-            lastMessageAt: serverTimestamp()
-          });
-        }
-      });
+      const roomDoc = await getDoc(roomRef);
+      if (roomDoc.exists()) {
+        await roomRef.update({
+          lastMessage: messageText,
+          lastMessageAt: serverTimestamp()
+        });
+      }
 
       setMessageText('');
     } catch (error) {

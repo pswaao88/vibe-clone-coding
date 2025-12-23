@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { db } from '../../../shared/utils/firebase';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { Button } from '../../../shared/components/Button';
