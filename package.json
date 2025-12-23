@@ -8,10 +8,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "emulators": "firebase emulators:start",
-    "emulators:functions": "firebase emulators:start --only functions",
+    "emulators": "firebase emulators:start --only firestore",
     "emulators:firestore": "firebase emulators:start --only firestore",
-    "emulators:all": "firebase emulators:start --only functions,firestore",
     "seed:emulator": "node scripts/seedEmulator.js"
   },
   "keywords": [],
